@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module MorMor
   class FSA
     class Enumerator
@@ -25,7 +27,7 @@ module MorMor
       def advance
         return if position.zero?
 
-        while position > 0
+        while position.positive?
           last_index = position - 1
           arc = arcs[last_index]
 
@@ -58,7 +60,6 @@ module MorMor
         @position = 0
         push_node(node)
       end
-
 
       def push_node(node)
         arcs[position] = fsa.first_arc(node)

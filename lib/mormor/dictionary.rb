@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'inifile'
 require_relative 'fsa'
 
@@ -10,8 +12,8 @@ module MorMor
     def initialize(path)
       # Possible values described in DictionaryAttribute.java
       @info = IniFile.load(path + '.info').to_h.fetch('global')
-        .map { |k, v| [k.sub(/^fsa\.dict\./, '').to_sym, v] }
-        .to_h
+                     .map { |k, v| [k.sub(/^fsa\.dict\./, '').to_sym, v] }
+                     .to_h
       @fsa = FSA.new(path + '.dict')
       @encoding = @info.fetch(:encoding)
       @separator = @info.fetch(:separator)
@@ -38,16 +40,17 @@ module MorMor
       return if arc.zero? || fsa.final_arc?(arc)
 
       # There is such a word in the dictionary. Return its base forms.
-      fsa.each(fsa.end_node(arc)).map { |encoded|
+      fsa.each(fsa.end_node(arc)).map do |encoded|
         # TODO: there could be "output conversion pairs"
 
         # Here, for "cats", we receive B+NNS, meaning remove 1 symbol, +NNS tag
 
         remove = encoded.split(@separator, 2).first.bytes.first.-(65) & 0xff # 65 is 'A'
         # TODO: If remove == 255, means "remove all"
-        decoded = word[0...word.size - remove] + encoded[1..-1].force_encoding(@encoding).encode('UTF-8')
+        decoded = word[0...word.size - remove] +
+                  encoded[1..-1].force_encoding(@encoding).encode('UTF-8')
         Word.new(*decoded.split(@separator, 2))
-      }
+      end
     end
   end
 end

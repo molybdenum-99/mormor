@@ -1,19 +1,21 @@
+# frozen_string_literal: true
+
 require_relative 'fsa/enumerator'
 
 module MorMor
   class FSA
     MAGIC =
-        ('\\'.ord << 24) |
-        ('f'.ord  << 16) |
-        ('s'.ord  << 8)  |
-        ('a'.ord)
+      ('\\'.ord << 24) |
+      ('f'.ord  << 16) |
+      ('s'.ord  << 8)  |
+      'a'.ord
 
     # LanguageTool seems to use CFSA2
     VERSIONS = {
       5 => 'FSA5',
       0xC5 => 'CFSA',
       0xc6 => 'CFSA2'
-    }
+    }.freeze
 
     NUMBERS = 1 << 8
     BIT_TARGET_NEXT = 1 << 7
@@ -34,11 +36,11 @@ module MorMor
 
     def read_header
       # FIXME: We are Ruby, we can just file.read(4) == '\fsa' ?..
-      file.getbyte == ((MAGIC >> 24)       ) and
-        file.getbyte == ((MAGIC >> 16) & 0xff) and
-        file.getbyte == ((MAGIC >>  8) & 0xff) and
-        file.getbyte == ((MAGIC       ) & 0xff) or
-        fail "Invalid file header, probably not an FSA."
+      (file.getbyte == ((MAGIC >> 24))) &&
+        (file.getbyte == ((MAGIC >> 16) & 0xff)) &&
+        (file.getbyte == ((MAGIC >> 8) & 0xff)) &&
+        (file.getbyte == (MAGIC & 0xff)) ||
+        raise('Invalid file header, probably not an FSA.')
 
       version = file.getbyte
       VERSIONS.fetch(version)
@@ -46,9 +48,9 @@ module MorMor
 
     def read_automaton
       # Java's short = "network (big-endian)"
-      flag_bits = file.read(2).unpack('n').first
+      flag_bits = file.read(2).unpack1('n')
 
-      @has_numbers = flag_bits.allbits?(NUMBERS)
+      @numbers = flag_bits.allbits?(NUMBERS)
 
       mapping_size = file.getbyte & 0xff
       @mapping = file.read(mapping_size).unpack('C*')
@@ -56,7 +58,7 @@ module MorMor
     end
 
     def first_arc(node)
-      has_numbers? ? skip_v_int(node) : node
+      numbers? ? skip_v_int(node) : node
     end
 
     def next_arc(arc)
@@ -87,14 +89,15 @@ module MorMor
 
     def arc_label(arc)
       index = arcs[arc] & LABEL_INDEX_MASK
-      index > 0 ? mapping[index] : arcs[arc + 1]
+      index.positive? ? mapping[index] : arcs[arc + 1]
     end
 
     def arc(node, label)
       # FIXME: It is some enumerable + detect, obviously
       arc = first_arc(node)
-      while !arc.zero?
+      until arc.zero?
         return arc if arc_label(arc) == label
+
         arc = next_arc(arc)
       end
 
@@ -145,12 +148,12 @@ module MorMor
 
     attr_reader :arcs, :mapping
 
-    def has_numbers?
-      @has_numbers
+    def numbers?
+      @numbers
     end
 
     def skip_v_int(offset)
-      offset += 1 while arcs[offset] < 0
+      offset += 1 while arcs[offset].negative?
       offset + 1
     end
 
@@ -158,7 +161,7 @@ module MorMor
       b = array[offset]
       value = b & 0x7F
       shift = 7
-      while b < 0
+      while b.negative?
         offset += 1
         b = array[offset]
         value |= (b & 0x7F) << shift
@@ -171,7 +174,7 @@ module MorMor
     def destination_node_offset(arc)
       if next_set?(arc)
         # Follow until the last arc of this state.
-        arc = next_arc(arc) while !last_arc?(arc)
+        arc = next_arc(arc) until last_arc?(arc)
 
         # And return the byte right after it.
         skip_arc(arc)

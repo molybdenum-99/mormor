@@ -1,19 +1,38 @@
 AllCops:
+  Include:
+    - 'lib/**/*'
+  Exclude:
+    - 'exe/**'
   DisplayCopNames: true
-  TargetRubyVersion: 2.5
+  TargetRubyVersion: 2.4
 
 Metrics/LineLength:
   Max: 100
   IgnoredPatterns: ['\#.*'] # ignore long comments
 
-Metrics/AbcSize:
-  Enabled: false
-
-Metrics/CyclomaticComplexity:
-  Enabled: false
-
 Metrics/MethodLength:
+  Max: 20
+
+Style/AndOr:
+  EnforcedStyle: conditionals
+
+Style/BlockDelimiters:
   Enabled: false
 
-Metrics/ClassLength:
+Style/SignalException:
+  EnforcedStyle: semantic
+
+Layout/SpaceInsideHashLiteralBraces:
+  EnforcedStyle: no_space
+
+Naming/UncommunicativeMethodParamName:
+  Enabled: false
+
+Style/MultilineBlockChain:
+  Enabled: false
+
+Style/FormatString:
+  EnforcedStyle: percent
+
+Style/FormatStringToken:
   Enabled: false

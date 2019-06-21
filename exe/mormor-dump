@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+require_relative '../lib/mormor'
+
+path = ARGV.shift or abort "Usage: mormor-dump <dictionary>.dict"
+File.exist?(path) or abort "#{path} does not exist"
+
+MorMor::FSA.new(path).each_sequence(&method(:puts))

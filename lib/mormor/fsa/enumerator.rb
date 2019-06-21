@@ -2,12 +2,21 @@
 
 module MorMor
   class FSA
+    # Rubyfied port of ByteSequenceIterator.java
+    #
+    # See: https://github.com/morfologik/morfologik-stemming/blob/master/morfologik-fsa/src/main/java/morfologik/fsa/ByteSequenceIterator.java
+    #
+    # From some node of automaton, it iterates through all paths starting at that node to their end,
+    # and yields each full path packed into original dictionary bytes string.
     class Enumerator
       def initialize(fsa, node)
         @fsa = fsa
-        @arcs = []
-        @buffer = []
-        restart_from(node) unless fsa.first_arc(node).zero?
+        @arcs_stack = []
+        @sequence = []
+
+        unless (first = fsa.first_arc(node)).zero? # rubocop:disable Style/GuardClause
+          arcs_stack << first
+        end
       end
 
       def each
@@ -22,49 +31,35 @@ module MorMor
 
       private
 
-      attr_reader :fsa, :arcs, :position, :buffer
+      attr_reader :fsa, :arcs_stack, :sequence
 
-      def advance
-        return if position.zero?
-
-        while position.positive?
-          last_index = position - 1
-          arc = arcs[last_index]
+      # Method is left unsplit to leave original algorithm recognizable, hence rubocop:disable
+      def advance # rubocop:disable Metrics/AbcSize
+        until arcs_stack.empty?
+          arc = arcs_stack.last
 
           if arc.zero?
-            # Remove the current node from the queue.
-            @position -= 1
+            # OC: Remove the current node from the queue.
+            arcs_stack.pop
             next
           end
 
-          # Go to the next arc, but leave it on the stack
+          # OC: Go to the next arc, but leave it on the stack
           # so that we keep the recursion depth level accurate.
-          arcs[last_index] = fsa.next_arc(arc)
-          arcs.map! { |e| e || 0 } # fill blanks with zeroes...
+          arcs_stack[-1] = fsa.next_arc(arc)
 
-          buffer[last_index] = fsa.arc_label(arc)
+          sequence[arcs_stack.count - 1] = fsa.arc_label(arc)
 
-          # Recursively descend into the arc's node.
-          push_node(fsa.end_node(arc)) unless fsa.terminal_arc?(arc)
+          # OC: Recursively descend into the arc's node.
+          arcs_stack.push(fsa.end_node(arc)) unless fsa.terminal_arc?(arc)
 
           if fsa.final_arc?(arc)
-            @buffer = buffer[0..last_index]
-            return buffer
+            sequence.slice!(arcs_stack.count)
+            return sequence
           end
         end
 
         nil
-      end
-
-      def restart_from(node)
-        @position = 0
-        push_node(node)
-      end
-
-      def push_node(node)
-        arcs[position] = fsa.first_arc(node)
-        arcs.map! { |e| e || 0 } # fill blanks with zeroes...
-        @position += 1
       end
     end
   end

@@ -54,7 +54,7 @@ module MorMor
           arcs_stack.push(fsa.end_node(arc)) unless fsa.terminal_arc?(arc)
 
           if fsa.final_arc?(arc)
-            sequence.slice!(arcs_stack.count)
+            sequence.slice!(arcs_stack.count..)
             return sequence
           end
         end

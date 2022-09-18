@@ -3,12 +3,14 @@ AllCops:
     - 'lib/**/*'
   Exclude:
     - 'exe/**'
+  TargetRubyVersion: 2.7
   DisplayCopNames: true
-  TargetRubyVersion: 2.4
+  NewCops: enable
+  SuggestExtensions: false
 
-Metrics/LineLength:
+Layout/LineLength:
   Max: 100
-  IgnoredPatterns: ['\#.*'] # ignore long comments
+  AllowedPatterns: ['\#.*'] # ignore long comments
 
 Metrics/MethodLength:
   Max: 20
@@ -25,7 +27,7 @@ Style/SignalException:
 Layout/SpaceInsideHashLiteralBraces:
   EnforcedStyle: no_space
 
-Naming/UncommunicativeMethodParamName:
+Naming/MethodParameterName:
   Enabled: false
 
 Style/MultilineBlockChain:
@@ -35,4 +37,16 @@ Style/FormatString:
   EnforcedStyle: percent
 
 Style/FormatStringToken:
+  Enabled: false
+
+Style/CommentAnnotation:
+  Enabled: false
+
+Lint/AmbiguousOperatorPrecedence:
+  Enabled: false
+
+Style/StringConcatenation:
+  Enabled: false
+
+Lint/MissingSuper:
   Enabled: false

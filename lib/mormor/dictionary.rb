@@ -26,6 +26,9 @@ module MorMor
     DECODERS = {'SUFFIX' => :suffix, 'PREFIX' => :prefix_suffix}.freeze
 
     # @private
+    ENCODING_ALIASES = {'utf8' => 'UTF-8'}.freeze
+
+    # @private
     attr_reader :fsa
     # @return [Hash]
     attr_reader :info
@@ -92,7 +95,7 @@ module MorMor
       # NB: All possible values described in DictionaryAttribute.java
 
       # Cache it to be quickly accessible
-      @encoding = @info.fetch('fsa.dict.encoding')
+      @encoding = @info.fetch('fsa.dict.encoding').then { ENCODING_ALIASES.fetch(_1, _1) }
       @separator = @info.fetch('fsa.dict.separator')
       @sepbyte = @separator.bytes.first
 
@@ -102,9 +105,8 @@ module MorMor
     def read_values(path)
       File.exist?(path) or fail ArgumentError, "#{path} does not exist"
       File.read(path).split("\n")
-          .map { |ln| ln.sub(/\#.*$/, '').strip }.reject(&:empty?)
-          .map { |ln| ln.split('=', 2) }
-          .to_h
+          .map { _1.sub(/\#.*$/, '').strip }.reject(&:empty?)
+          .to_h { _1.split('=', 2) }
     end
 
     def choose_decoder(name)
@@ -115,14 +117,14 @@ module MorMor
     def suffix(source, encoded)
       truncate_suf = encoded[0...1].bytes.first.-(65) & 0xff # 65 is 'A'
       # TODO: If remove == 255, means "remove all"
-      source[0...source.size - truncate_suf] + encoded[1..-1]
+      source[0...source.size - truncate_suf] + encoded[1..]
     end
 
     def prefix_suffix(source, encoded)
       truncate_pref, truncate_suf = encoded[0...2].bytes.first(2).map { |b| (b - 65) & 0xff } # 65 is 'A'
       # TODO: If remove == 255, means "remove all"
 
-      source[truncate_pref...source.size - truncate_suf] + encoded[2..-1]
+      source[truncate_pref...source.size - truncate_suf] + encoded[2..]
     end
   end
 end

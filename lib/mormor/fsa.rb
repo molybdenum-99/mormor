@@ -49,7 +49,7 @@ module MorMor
     end
 
     def each_sequence(from: root_node, &block)
-      Enumerator.new(self, from).then { |e| block ? e.each(&block) : e }
+      Enumerator.new(self, from).then { block ? _1.each(&block) : _1 }
     end
 
     def next_arc(arc)
@@ -67,12 +67,12 @@ module MorMor
     end
 
     def find_arc(node, label)
-      each_arc(from: node).detect { |a| arc_label(a) == label } || 0
+      each_arc(from: node).detect { arc_label(_1) == label } || 0
     end
 
     # Port of FSATraversal.java
     # Method is left unsplit to leave original algorithm recognizable, hence rubocop:disable's
-    def match(sequence, node = root_node) # rubocop:disable Metrics/AbcSize,Metrics/CyclomaticComplexity
+    def match(sequence, node = root_node) # rubocop:disable Metrics/AbcSize,Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity
       return Match.new(:no) if node.zero?
 
       sequence.each_with_index do |byte, i|

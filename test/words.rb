@@ -10,9 +10,6 @@ require_relative '../lib/mormor'
   german: %w[abbehalten]
 }.each do |lang, words|
   dic = MorMor::Dictionary.new(File.expand_path(lang.to_s, __dir__))
-  if "utf8" == dic.instance_variable_get(:@encoding)
-    dic.instance_variable_set :@encoding, Encoding::UTF_8
-  end
   puts "#{lang}\n" + "-" * lang.length
   words.each do |word|
     found = dic.lookup(word)
